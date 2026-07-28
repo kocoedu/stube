@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스튜브 (STube)</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Firebase SDK (v10 Modular via CDN) -->
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>📺 스튜브 (STube)</h1>
+      <p class="tagline">"유튜브 10분 보고, 과목별 맞춤 커리큘럼 완성"</p>
+    </header>
+
+    <!-- 검색 및 커리큘럼 영역 -->
+    <section class="section">
+      <h2>과목별 맞춤 커리큘럼 조회</h2>
+      <div class="search-box">
+        <input type="text" id="schoolInput" placeholder="학교명을 입력하세요 (예: 한국고등학교)">
+        <button id="searchBtn">조회하기</button>
+      </div>
+      <div id="curriculumResult" class="result-box"></div>
+    </section>
+
+    <!-- 학생 평가 및 요청사항 게시판 -->
+    <section class="section">
+      <h2>학생 평가 및 요청사항</h2>
+      
+      <!-- 글 작성 폼 -->
+      <form id="feedbackForm" class="feedback-form">
+        <input type="text" id="authorInput" placeholder="작성자 (예: 김스튜브)" required>
+        <textarea id="contentInput" placeholder="평가나 요청사항을 입력하세요..." rows="3" required></textarea>
+        <button type="submit">등록하기</button>
+      </form>
+
+      <!-- 게시판 목록 -->
+      <div class="feedback-list-container">
+        <h3>최신 등록 목록</h3>
+        <div id="feedbackList" class="feedback-list">
+          <p class="loading">목록을 불러오는 중...</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
