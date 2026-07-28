@@ -2,48 +2,130 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>스튜브 (STube)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>STUBE - 유튜브 기반 맞춤 학습 컨설팅</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK (v10 Modular via CDN) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a365d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <script type="module" src="app.js"></script>
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <h1>📺 스튜브 (STube)</h1>
-      <p class="tagline">"유튜브 10분 보고, 과목별 맞춤 커리큘럼 완성"</p>
+  <div id="app" class="mobile-container">
+    
+    <header class="app-header">
+      <div class="logo-container">
+        <svg class="stube-logo-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 45 25 L 125 25 A 15 15 0 0 1 140 40 L 140 180 A 15 15 0 0 1 125 195 L 45 195 A 15 15 0 0 1 30 180 L 30 40 A 15 15 0 0 1 45 25 Z" fill="none" stroke="#104a8e" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 140 60 L 165 60 A 10 10 0 0 1 175 70 L 175 160 A 10 10 0 0 1 165 170 L 140 170" fill="none" stroke="#e52d27" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 75 80 L 125 110 L 75 140 Z" fill="#e52d27" stroke="#104a8e" stroke-width="8" stroke-linejoin="round"/>
+        </svg>
+        <span class="logo-text">STUBE</span>
+      </div>
+      <p class="app-tagline">유튜브 10분 보고, 과목별 맞춤 커리큘럼 완성</p>
     </header>
 
-    <!-- 검색 및 커리큘럼 영역 -->
-    <section class="section">
-      <h2>과목별 맞춤 커리큘럼 조회</h2>
-      <div class="search-box">
-        <input type="text" id="schoolInput" placeholder="학교명을 입력하세요 (예: 한국고등학교)">
-        <button id="searchBtn">조회하기</button>
-      </div>
-      <div id="curriculumResult" class="result-box"></div>
-    </section>
+    <nav class="tab-navigation">
+      <button class="tab-btn active" data-tab="onboarding">개인화 온보딩</button>
+      <button class="tab-btn" data-tab="report">맞춤 리포트</button>
+      <button class="tab-btn" data-tab="ai-chat">AI 학습 매니저</button>
+      <button class="tab-btn" data-tab="feedback">학생 피드백</button>
+    </nav>
 
-    <!-- 학생 평가 및 요청사항 게시판 -->
-    <section class="section">
-      <h2>학생 평가 및 요청사항</h2>
+    <main class="content-area">
       
-      <!-- 글 작성 폼 -->
-      <form id="feedbackForm" class="feedback-form">
-        <input type="text" id="authorInput" placeholder="작성자 (예: 김스튜브)" required>
-        <textarea id="contentInput" placeholder="평가나 요청사항을 입력하세요..." rows="3" required></textarea>
-        <button type="submit">등록하기</button>
-      </form>
+      <section id="tab-onboarding" class="tab-content active">
+        <div class="card onboarding-card">
+          <h2 class="card-title">수험생 프로필 설정</h2>
+          <p class="card-subtitle">정확한 맞춤 추천을 위해 현재 학습 상태를 입력해 주세요.</p>
+          
+          <form id="onboardingForm" class="form-group">
+            <label class="form-label">학년</label>
+            <select id="userGrade" class="form-control" required>
+              <option value="">학년을 선택하세요</option>
+              <option value="고3">고등학교 3학년 / N수생</option>
+              <option value="고2">고등학교 2학년</option>
+              <option value="고1">고등학교 1학년</option>
+              <option value="중등">중학생</option>
+            </select>
 
-      <!-- 게시판 목록 -->
-      <div class="feedback-list-container">
-        <h3>최신 등록 목록</h3>
-        <div id="feedbackList" class="feedback-list">
-          <p class="loading">목록을 불러오는 중...</p>
+            <label class="form-label">목표/현재 성적 수준</label>
+            <select id="userLevel" class="form-control" required>
+              <option value="">성적 수준을 선택하세요</option>
+              <option value="상위권 (1~2등급)">상위권 (1~2등급)</option>
+              <option value="중위권 (3~4등급)">중위권 (3~4등급)</option>
+              <option value="하위권 (5등급 이하)">하위권 (5등급 이하)</option>
+            </select>
+
+            <label class="form-label">관심 과목 및 고민 사항</label>
+            <textarea id="userQuery" class="form-control" rows="4" placeholder="예: 수학 미적분 4점 문항 오답률이 높아서 고민입니다. 연고티비 선배들이 추천하는 N제 교재와 인강 강사를 알고 싶어요." required></textarea>
+
+            <button type="submit" class="btn btn-primary">맞춤 커리큘럼 분석 시작</button>
+          </form>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section id="tab-report" class="tab-content">
+        <div class="card report-card">
+          <div class="report-header">
+            <span class="badge badge-red">데이터 기반 분석</span>
+            <h2 class="card-title">선배들이 검증한 커리큘럼 리포트</h2>
+          </div>
+          
+          <div id="reportLoader" class="loader-container hidden">
+            <div class="spinner"></div>
+            <p class="loader-text">Gemini AI가 유튜브 데이터 및 커리큘럼을 분석하고 있습니다...</p>
+          </div>
+
+          <div id="reportResult" class="report-result-body">
+            <div class="empty-state">
+              <p>온보딩 탭에서 프로필 입력 후 분석을 진행해 주세요.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-ai-chat" class="tab-content">
+        <div class="card chat-card">
+          <h2 class="card-title">AI 학습 매니저</h2>
+          <p class="card-subtitle">남은 수험 기간, 취약점 등 구체적인 학습 전략을 물어보세요.</p>
+          
+          <div id="chatMessages" class="chat-messages-container">
+            <div class="chat-bubble bot">
+              안녕하세요! 스튜브 AI 학습 매니저입니다. 학습 전략이나 문제지 추천에 대해 무엇이든 물어보세요.
+            </div>
+          </div>
+
+          <div class="chat-input-row">
+            <input type="text" id="chatInput" class="form-control" placeholder="질문을 입력하세요...">
+            <button id="chatSendBtn" class="btn btn-red">전송</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-feedback" class="tab-content">
+        <div class="card feedback-card">
+          <h2 class="card-title">학생 평가 및 요청사항</h2>
+          <p class="card-subtitle">실제 수험생들의 사용 후기와 요청사항 게시판입니다.</p>
+          
+          <form id="feedbackForm" class="form-group">
+            <input type="text" id="fbAuthor" class="form-control" placeholder="작성자 이름 또는 닉네임" required>
+            <textarea id="fbContent" class="form-control" rows="3" placeholder="앱에 대한 평가나 필요한 기능을 자유롭게 작성해 주세요." required></textarea>
+            <button type="submit" class="btn btn-primary">게시글 등록하기</button>
+          </form>
+
+          <div class="feedback-list-section">
+            <h3 class="sub-heading">최신 학생 의견</h3>
+            <div id="feedbackList" class="feedback-list">
+              <p class="loading-text">피드백 목록을 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
   </div>
 </body>
 </html>

@@ -1,0 +1,16 @@
+{
+  "name": "스튜브 STUBE",
+  "short_name": "STUBE",
+  "description": "유튜브 10분 보고, 과목별 맞춤 커리큘럼 완성",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#104a8e",
+  "theme_color": "#104a8e",
+  "icons": [
+    {
+      "src": "screen.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
