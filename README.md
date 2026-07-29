@@ -46,27 +46,39 @@ Deployment: Vercel
 
 stube-app/
 
+
 ├── api/
+
 
 │   └── generate.js       # Vercel 서버리스 함수 (Gemini API 연동)
 
+
 ├── public/
+
 
 │   ├── index.html        # 메인 HTML (UI 및 Firebase SDK 포함)
 
+
 │   ├── style.css         # 모바일 퍼스트 디자인 시스템 스타일시트
+
 
 │   ├── app.js            # 프론트엔드 비즈니스 로직 및 Firebase 연동
 
+
 │   ├── manifest.json     # PWA 앱 매니페스트
+
 
 │   ├── sw.js             # PWA 서비스 워커
 
+
 │   └── screen.png        # 대표 로고 및 파비콘 이미지
+
 
 ├── vercel.json           # Vercel 라우팅 및 PWA 헤더 설정
 
+
 ├── package.json          # 프로젝트 정보 및 의존성 정의
+
 
 └── README.md             # 프로젝트 문서
 
