@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.' });
+    return res.status(500).json({ error: 'GEMINI_API_KEY 환경 변수가 설정되지 않았습니다. Vercel Settings에서 확인해 주세요.' });
   }
 
   const { query, grade, level } = req.query;
@@ -34,14 +34,13 @@ export default async function handler(req, res) {
 - 성적 수준: ${level || '전체'}
 - 수험생 고민/키워드: ${query}
 
-다음 항목을 명확히 구분하여 가독성 있게 작성해 주세요:
+다음 항목을 명확히 구분하여 작성해 주세요:
 1. 데이터 기반 검증 수치 (예: 연고대 선배 12명 중 9명이 추천한 교재)
 2. 수준별 추천 문제지 및 N제
 3. 수준별 인강 강사 및 대표 커리큘럼
 4. 과목별 핵심 학습법 및 실전 전략
 `;
 
-    // 제공해주신 모델 목록 중 가장 안정적인 gemini-2.5-flash 호출
     const targetModel = "gemini-2.5-flash";
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
 
@@ -66,40 +65,44 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // API 에러 응답이 직접 반환된 경우 (인증 오류, 할당량 초과 등)
+    // Google API 자체에서 에러를 반환한 경우 (API키 인증 오류, 할당량 초과 등)
     if (data.error) {
       return res.status(500).json({
-        error: `Gemini API 에러 (${data.error.code}): ${data.error.message}`,
-        details: data.error
+        error: `Gemini API 에러 [${data.error.code}]: ${data.error.message}`
       });
     }
 
-    // 응답 텍스트 추출 (thinking 파트 분리 및 안전한 텍스트 파싱)
+    // 응답 본문에서 텍스트 안전 추출
     const candidate = data.candidates && data.candidates[0];
     if (candidate && candidate.content && candidate.content.parts) {
-      // thinking 파트 제외하고 실제 text 파트만 결합
-      const textParts = candidate.content.parts
+      // 1순위: thinking(생각) 파트를 제외한 순수 텍스트 파트 결합
+      const nonThoughtTexts = candidate.content.parts
         .filter(part => part.text && !part.thought)
         .map(part => part.text);
 
-      const resultText = textParts.length > 0 
-        ? textParts.join("\n") 
-        : candidate.content.parts.map(p => p.text || "").join("\n");
+      if (nonThoughtTexts.length > 0 && nonThoughtTexts.join('').trim().length > 0) {
+        return res.status(200).json({ result: nonThoughtTexts.join('\n') });
+      }
 
-      if (resultText.trim().length > 0) {
-        return res.status(200).json({ result: resultText });
+      // 2순위: 모든 text 파트 결합
+      const allTexts = candidate.content.parts
+        .map(part => part.text || '')
+        .filter(t => t.trim().length > 0);
+
+      if (allTexts.length > 0) {
+        return res.status(200).json({ result: allTexts.join('\n') });
       }
     }
 
+    // 텍스트를 찾지 못했을 때 구체적인 응답 이유 출력
+    const finishReason = candidate ? candidate.finishReason : 'NO_CANDIDATE';
     return res.status(500).json({ 
-      error: 'Gemini 응답 생성 실패: 응답 본문에서 텍스트를 추출할 수 없습니다.', 
-      details: data 
+      error: `Gemini 응답 텍스트 추출 실패 (종료 사유: ${finishReason})`
     });
 
   } catch (error) {
     return res.status(500).json({ 
-      error: '서버 내부 오류가 발생했습니다.', 
-      details: error.message 
+      error: `서버 통신 예외 발생: ${error.message}` 
     });
   }
 }
