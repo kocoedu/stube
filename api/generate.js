@@ -41,7 +41,8 @@ export default async function handler(req, res) {
 4. 과목별 핵심 학습법 및 실전 전략
 `;
 
-    const targetModel = "gemini-2.5-flash";
+    // 안내 메시지 및 계정 지원 모델에 맞추어 gemini-3.8-flash 로 변경
+    const targetModel = "gemini-3.8-flash";
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
 
     const response = await fetch(apiUrl, {
@@ -65,17 +66,16 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // Google API 자체에서 에러를 반환한 경우 (API키 인증 오류, 할당량 초과 등)
+    // Google API 자체에서 에러를 반환한 경우
     if (data.error) {
       return res.status(500).json({
         error: `Gemini API 에러 [${data.error.code}]: ${data.error.message}`
       });
     }
 
-    // 응답 본문에서 텍스트 안전 추출
+    // 응답 본문에서 텍스트 추출
     const candidate = data.candidates && data.candidates[0];
     if (candidate && candidate.content && candidate.content.parts) {
-      // 1순위: thinking(생각) 파트를 제외한 순수 텍스트 파트 결합
       const nonThoughtTexts = candidate.content.parts
         .filter(part => part.text && !part.thought)
         .map(part => part.text);
@@ -84,7 +84,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ result: nonThoughtTexts.join('\n') });
       }
 
-      // 2순위: 모든 text 파트 결합
       const allTexts = candidate.content.parts
         .map(part => part.text || '')
         .filter(t => t.trim().length > 0);
@@ -94,7 +93,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // 텍스트를 찾지 못했을 때 구체적인 응답 이유 출력
     const finishReason = candidate ? candidate.finishReason : 'NO_CANDIDATE';
     return res.status(500).json({ 
       error: `Gemini 응답 텍스트 추출 실패 (종료 사유: ${finishReason})`
