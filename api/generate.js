@@ -24,8 +24,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: '분석 요청 키워드가 누락되었습니다.' });
   }
 
-  try {
-    const prompt = `
+  const prompt = `
 당신은 수험생 맞춤형 학습 컨설팅 앱 '스튜브(STube)'의 전문 AI 컨설턴트입니다.
 유튜브의 수능/공부법 채널(연고티비 등) 데이터를 기반으로 수치화된 신뢰도 높은 리포트를 작성하세요.
 
@@ -41,66 +40,77 @@ export default async function handler(req, res) {
 4. 과목별 핵심 학습법 및 실전 전략
 `;
 
-    // 안내 메시지 및 계정 지원 모델에 맞추어 gemini-3.8-flash 로 변경
-    const targetModel = "gemini-3.8-flash";
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
+  // 503 과부하 발생 시 순차적으로 자동 전환할 대체 모델 목록
+  const candidateModels = [
+    "gemini-flash-latest",
+    "gemini-3.5-flash",
+    "gemini-3.1-flash-lite",
+    "gemini-3.8-flash"
+  ];
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }]
+  let lastError = null;
+
+  for (const model of candidateModels) {
+    try {
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048
           }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2048
-        }
-      })
-    });
-
-    const data = await response.json();
-
-    // Google API 자체에서 에러를 반환한 경우
-    if (data.error) {
-      return res.status(500).json({
-        error: `Gemini API 에러 [${data.error.code}]: ${data.error.message}`
+        })
       });
-    }
 
-    // 응답 본문에서 텍스트 추출
-    const candidate = data.candidates && data.candidates[0];
-    if (candidate && candidate.content && candidate.content.parts) {
-      const nonThoughtTexts = candidate.content.parts
-        .filter(part => part.text && !part.thought)
-        .map(part => part.text);
+      const data = await response.json();
 
-      if (nonThoughtTexts.length > 0 && nonThoughtTexts.join('').trim().length > 0) {
-        return res.status(200).json({ result: nonThoughtTexts.join('\n') });
+      // 503 과부하 또는 일시적 오류 시 다음 모델로 전환
+      if (data.error) {
+        lastError = `[${model}] ${data.error.message} (${data.error.code})`;
+        if (data.error.code === 503 || data.error.code === 429 || data.error.code === 404) {
+          continue;
+        }
+        return res.status(500).json({ error: `Gemini API 에러 [${data.error.code}]: ${data.error.message}` });
       }
 
-      const allTexts = candidate.content.parts
-        .map(part => part.text || '')
-        .filter(t => t.trim().length > 0);
+      // 텍스트 추출 로직
+      const candidate = data.candidates && data.candidates[0];
+      if (candidate && candidate.content && candidate.content.parts) {
+        const nonThoughtTexts = candidate.content.parts
+          .filter(part => part.text && !part.thought)
+          .map(part => part.text);
 
-      if (allTexts.length > 0) {
-        return res.status(200).json({ result: allTexts.join('\n') });
+        if (nonThoughtTexts.length > 0 && nonThoughtTexts.join('').trim().length > 0) {
+          return res.status(200).json({ result: nonThoughtTexts.join('\n') });
+        }
+
+        const allTexts = candidate.content.parts
+          .map(part => part.text || '')
+          .filter(t => t.trim().length > 0);
+
+        if (allTexts.length > 0) {
+          return res.status(200).json({ result: allTexts.join('\n') });
+        }
       }
+    } catch (err) {
+      lastError = err.message;
+      continue;
     }
-
-    const finishReason = candidate ? candidate.finishReason : 'NO_CANDIDATE';
-    return res.status(500).json({ 
-      error: `Gemini 응답 텍스트 추출 실패 (종료 사유: ${finishReason})`
-    });
-
-  } catch (error) {
-    return res.status(500).json({ 
-      error: `서버 통신 예외 발생: ${error.message}` 
-    });
   }
+
+  // 모든 후보 모델이 실패한 경우
+  return res.status(503).json({
+    error: `현재 AI 서비스 접속량이 많아 일시적으로 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요. (${lastError})`
+  });
 }
